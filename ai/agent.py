@@ -1,11 +1,13 @@
 import random
+import json
+import os
 
 
-class QLearningAI:
+class LearningAgent:
     
     def __init__(self, color, learning_rate=0.1, discount_factor=0.9, exploration_rate=0.2):
         self.color = color
-        self.q_table = {}
+        self.value_table = {}
         self.learning_rate = learning_rate
         self.discount_factor = discount_factor
         self.exploration_rate = exploration_rate
@@ -59,8 +61,8 @@ class QLearningAI:
     def get_action_key(self, piece, destination):
         return (piece.row, piece.col, destination[0], destination[1])
     
-    def get_q_value(self, state, action):
-        return self.q_table.get((state, action), 0.0)
+    def get_value(self, state, action):
+        return self.value_table.get((state, action), 0.0)
     
     def choose_move(self, board, rules):
         all_moves = rules.get_all_valid_moves(self.color)
@@ -86,10 +88,10 @@ class QLearningAI:
             
             for piece, dest, captured in move_list:
                 action = self.get_action_key(piece, dest)
-                q_value = self.get_q_value(state, action)
+                value = self.get_value(state, action)
                 
                 immediate_reward = len(captured) * 3
-                total_value = q_value + immediate_reward
+                total_value = value + immediate_reward
                 
                 if total_value > best_value:
                     best_value = total_value
@@ -110,18 +112,18 @@ class QLearningAI:
         
         new_state = self.get_state_key(board)
         
-        max_future_q = 0.0
-        for key, value in self.q_table.items():
+        max_future = 0.0
+        for key, value in self.value_table.items():
             if key[0] == new_state:
-                max_future_q = max(max_future_q, value)
+                max_future = max(max_future, value)
         
-        current_q = self.get_q_value(self.last_state, self.last_action)
+        current = self.get_value(self.last_state, self.last_action)
         
-        new_q = current_q + self.learning_rate * (
-            reward + self.discount_factor * max_future_q - current_q
+        new_value = current + self.learning_rate * (
+            reward + self.discount_factor * max_future - current
         )
         
-        self.q_table[(self.last_state, self.last_action)] = new_q
+        self.value_table[(self.last_state, self.last_action)] = new_value
     
     def calculate_reward(self, captured_pieces, became_king, game_over, won):
         reward = 0
@@ -146,3 +148,33 @@ class QLearningAI:
     def reset(self):
         self.last_state = None
         self.last_action = None
+    
+    def save(self, filepath):
+        save_dir = os.path.dirname(filepath)
+        if save_dir and not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+        
+        serializable = {}
+        for key, value in self.value_table.items():
+            state, action = key
+            str_key = f"{state}|{action}"
+            serializable[str_key] = value
+        
+        with open(filepath, "w") as f:
+            json.dump(serializable, f)
+    
+    def load(self, filepath):
+        if not os.path.exists(filepath):
+            return False
+        
+        with open(filepath, "r") as f:
+            serializable = json.load(f)
+        
+        self.value_table = {}
+        for str_key, value in serializable.items():
+            parts = str_key.split("|")
+            state = eval(parts[0])
+            action = eval(parts[1])
+            self.value_table[(state, action)] = value
+        
+        return True

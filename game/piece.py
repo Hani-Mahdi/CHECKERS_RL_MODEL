@@ -24,11 +24,22 @@ class Piece:
         elif self.color == 'blue':
             return [1]
         elif self.color == 'green':
-            return [-1]
+            return [1]
         elif self.color == 'yellow':
             return [-1]
         
         return [1]
+    
+    def get_col_direction(self):
+        if self.is_king:
+            return [-1, 1]
+        
+        if self.color == 'green':
+            return [1]
+        elif self.color == 'yellow':
+            return [-1]
+        
+        return [-1, 1]
     
     def copy(self):
         new_piece = Piece(self.color, self.row, self.col)

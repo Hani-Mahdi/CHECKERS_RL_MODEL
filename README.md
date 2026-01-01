@@ -1,25 +1,24 @@
 # Checkers Reinforcement Learning Agent
 
-A reinforcement learning-based Checkers agent inspired by early self-learning game programs from the 1980s. Features Q-learning with self-play training, comprehensive logging, and a polished Pygame interface.
+A reinforcement learning-based Checkers agent inspired by early self-learning game programs from the 1980s. Features self-play training, comprehensive logging, and a polished Pygame interface.
 
 ## Project Overview
 
-This project implements a Q-learning agent that learns to play Checkers through self-play. The agent uses state representation, reward shaping, action masking, and policy updates to improve over time. Training logs track convergence, win rates, and illegal move reduction.
+This project implements a learning agent that plays Checkers through self-play. The agent uses state representation, reward shaping, action masking, and policy updates to improve over time. Training logs track win rates, valid moves, and average moves to win.
 
 ## Key Features
 
 - **Self-Play Training**: Agent learns by playing against itself over thousands of games
-- **Q-Learning Algorithm**: Tabular reinforcement learning with epsilon-greedy exploration
+- **Reinforcement Learning**: Tabular learning with epsilon-greedy exploration
 - **State Representation**: Compact encoding of board position, piece counts, and board control
-- **Reward Shaping**: Structured rewards for captures (+3), kings (+5), wins (+100)
+- **Reward Shaping**: Structured rewards for captures, kings, and wins
 - **Action Masking**: Only legal moves are considered, with mandatory capture enforcement
-- **Training Logs**: JSON/CSV output tracking games played, win rates, rewards, and Q-table growth
+- **Training Logs**: JSON/CSV output tracking win rates, valid moves, and avg moves to win
 
 ## Training Results
 
 After training over 50,000+ simulated games:
 - **Win Rate vs Random Baseline**: 60-70%
-- **Illegal Move Rate**: Reduced by ~85% through improved state validation
 - **Convergence**: Stable policy after ~30,000 games with decaying exploration
 
 ## Game Modes
@@ -32,7 +31,7 @@ After training over 50,000+ simulated games:
 ### Four-Player Checkers (1 vs 3 CPUs)
 - Expanded 12×12 board with corner cutouts
 - Four distinct piece colors: Red (you), Blue, Green, Yellow
-- Three AI opponents using the same Q-learning system
+- Three AI opponents using the same learning system
 
 ## Project Structure
 
@@ -43,8 +42,7 @@ CHECKERS_MODEL/
 ├── training_logs/           # Generated training data
 │   ├── session_*.json       # Full session metrics
 │   ├── training_*.csv       # Per-game training data
-│   ├── summary_*.txt        # Human-readable summary
-│   └── q_tables/            # Saved Q-tables (JSON)
+│   └── summary_*.txt        # Human-readable summary
 ├── ui/
 │   ├── home_screen.py       # Main menu
 │   ├── game_screen.py       # Board rendering
@@ -54,7 +52,7 @@ CHECKERS_MODEL/
 │   ├── piece.py             # Piece class
 │   └── rules.py             # Move validation
 ├── ai/
-│   ├── q_learning.py        # Q-learning agent
+│   ├── agent.py             # Learning agent
 │   └── training_logger.py   # Training metrics logger
 └── requirements.txt
 ```
@@ -82,13 +80,10 @@ Training outputs are saved to `training_logs/`.
 - King counts per color
 - Board control by quadrant (relative piece advantage)
 
-### Q-Learning Update
-```
-Q(s,a) = Q(s,a) + α * (reward + γ * max_Q(s') - Q(s,a))
-```
-- Learning rate (α): 0.1
-- Discount factor (γ): 0.95
-- Exploration rate (ε): 0.3 → 0.05 (decaying)
+### Learning Parameters
+- Learning rate: 0.1
+- Discount factor: 0.95
+- Exploration rate: 0.3 → 0.05 (decaying)
 
 ### Reward Structure
 | Event | Reward |
@@ -106,28 +101,26 @@ Q(s,a) = Q(s,a) + α * (reward + γ * max_Q(s') - Q(s,a))
 {
   "games_played": 50000,
   "total_wins": {"red": 24500, "black": 25500},
-  "illegal_move_rate": 0.02,
-  "avg_reward_per_game": 12.5,
-  "episode_rewards": [...],
-  "win_rates": [...]
+  "valid_move_count": 3500000,
+  "avg_moves_to_win": {"red": 65.2, "black": 62.1},
+  "win_rates_history": [...]
 }
 ```
 
 ### training_*.csv
 ```
-game_number,cumulative_wins_black,win_rate,episode_reward,q_table_size
-1,0,0.0,3.0,15
-2,1,0.5,8.0,28
+game_number,moves_in_game,win_rate
+1,72,0.0
+2,65,0.5
 ...
 ```
 
 ## Technical Highlights
 
-1. **State Abstraction**: Simplified state space enables learning without massive Q-tables
+1. **State Abstraction**: Simplified state space enables efficient learning
 2. **Action Masking**: Mandatory captures enforced at the rules level
 3. **Self-Play**: Both players learn simultaneously, creating curriculum
-4. **Convergence Tracking**: Multiple metrics logged for parameter tuning
-5. **Serializable Q-Tables**: Save/load trained policies as JSON
+4. **Convergence Tracking**: Win rates and move counts logged for analysis
 
 ## Controls
 

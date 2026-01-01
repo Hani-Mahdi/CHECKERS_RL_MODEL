@@ -3,15 +3,15 @@ import sys
 
 from ui.home_screen import HomeScreen
 from ui.game_screen import GameScreen
-from ui.colors import BACKGROUND
 from game.board import Board
 from game.rules import Rules
-from ai.q_learning import QLearningAI
+from ai.agent import LearningAgent
 
 
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 700
 FPS = 60
+SAVE_DIR = "saved_models"
 
 
 class CheckersGame:
@@ -45,6 +45,17 @@ class CheckersGame:
         self.ai_delay = 500
         self.ai_move_time = 0
     
+    def _get_save_path(self, color):
+        return f"{SAVE_DIR}/agent_{color}.json"
+    
+    def _save_all_agents(self):
+        for color, ai in self.ai_players.items():
+            ai.save(self._get_save_path(color))
+    
+    def _load_all_agents(self):
+        for color, ai in self.ai_players.items():
+            ai.load(self._get_save_path(color))
+    
     def run(self):
         running = True
         
@@ -61,6 +72,7 @@ class CheckersGame:
             pygame.display.flip()
             self.clock.tick(FPS)
         
+        self._save_all_agents()
         pygame.quit()
         sys.exit()
     
@@ -150,7 +162,7 @@ class CheckersGame:
             self.game_screen = GameScreen(SCREEN_WIDTH, SCREEN_HEIGHT, 8)
             
             self.ai_players = {
-                'black': QLearningAI('black')
+                'black': LearningAgent('black')
             }
         else:
             self.board = Board(12, 'four_player')
@@ -159,9 +171,9 @@ class CheckersGame:
             self.game_screen.update_board_size(12)
             
             self.ai_players = {
-                'blue': QLearningAI('blue'),
-                'green': QLearningAI('green'),
-                'yellow': QLearningAI('yellow')
+                'blue': LearningAgent('blue'),
+                'green': LearningAgent('green'),
+                'yellow': LearningAgent('yellow')
             }
         
         self.rules = Rules(self.board)
@@ -170,6 +182,8 @@ class CheckersGame:
         self.valid_moves = {}
         self.winner = None
         self.ai_move_time = 0
+        
+        self._load_all_agents()
         
         for ai in self.ai_players.values():
             ai.reset()
@@ -182,6 +196,7 @@ class CheckersGame:
         if game_over:
             self.winner = winner
             self.state = 'GAME_OVER'
+            self._save_all_agents()
             return
         
         current_player = self.players[self.current_player_index]
